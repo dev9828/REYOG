@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "97075895825",
+    "project_id": "reyogo-9f5ad",
+    "storage_bucket": "reyogo-9f5ad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:97075895825:android:25bcbfa1627a5216911bb0",
+        "android_client_info": {
+          "package_name": "com.example.gold_price"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcu0lAB9iDEuHWg5qNDenjCZAZMrTM2h4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
