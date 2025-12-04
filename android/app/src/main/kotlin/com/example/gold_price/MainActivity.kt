@@ -1,5 +1,8 @@
 package com.example.gold_price
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// Make the host activity a FlutterFragmentActivity (v2 embedding compatible)
+class MainActivity: FlutterFragmentActivity() {
+  // no additional code required
+}

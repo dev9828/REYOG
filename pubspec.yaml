@@ -26,10 +26,15 @@ dependencies:
     sdk: flutter
   provider: ^6.1.5
   http: ^1.1.0
+  local_auth: ^2.1.4
+  shared_preferences: ^2.1.0
+  fl_chart: ^0.70.0
+
 
   firebase_core: ^4.2.1
   firebase_auth: ^6.1.2
   cloud_firestore: ^6.1.0
+  video_player: ^2.5.1
 
 dev_dependencies:
   flutter_test:
@@ -50,6 +55,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/videos/why_reyogo.mp4
 
 
   # To add assets to your application, add an assets section, like this:

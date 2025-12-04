@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
-import 'otp_verification_page.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -9,133 +8,123 @@ class ForgotPasswordPage extends StatefulWidget {
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
-  final _phone = TextEditingController();
   final _email = TextEditingController();
+  final _phone = TextEditingController();
   bool _loading = false;
 
   @override
   void dispose() {
-    _phone.dispose();
     _email.dispose();
+    _phone.dispose();
     super.dispose();
   }
 
-  void _sendOtp() async {
+  Future<void> _sendOtp() async {
     final phone = _phone.text.trim();
     final email = _email.text.trim();
 
     if (phone.isEmpty) {
-      // If phone not provided but email provided, show info (email-reset flow not implemented here)
       if (email.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text(
-                'Password reset via email is not implemented. Please provide phone to receive OTP.')));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Enter phone with country code')));
+            content:
+                Text('Email reset not implemented, please provide phone')));
+        return;
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Enter phone with country code')));
       return;
     }
 
     setState(() => _loading = true);
-    await AuthService.instance.sendOtp(
-      phone: phone,
-      codeSent: (verificationId, _) {
-        setState(() => _loading = false);
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => OtpVerificationPage(
-                    verificationId: verificationId,
-                    phone: phone,
-                    signupData: {'email': email.isEmpty ? null : email})));
-      },
-      onFailed: (err) {
-        setState(() => _loading = false);
+    try {
+      await AuthService.instance.sendOtp(
+        phone: phone,
+        codeSent: (verificationId, _) {
+          if (!mounted) return;
+          Navigator.pushNamed(context, '/otp',
+              arguments: {'verificationId': verificationId, 'phone': phone});
+        },
+        onFailed: (err) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(err.message ?? 'OTP failed')));
+        },
+        onAutoVerified: (credential) async {
+          // auto verified: sign in and go to home
+          try {
+            await AuthService.instance.signInWithCredential(credential);
+            if (!mounted) return;
+            Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+          } catch (e) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Auto sign-in failed: $e')));
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(err.message ?? 'OTP failed')));
-      },
-      onAutoVerified: (credential) async {
-        try {
-          await AuthService.instance.signInWithCredential(credential);
-          setState(() => _loading = false);
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
-        } catch (e) {
-          setState(() => _loading = false);
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(e.toString())));
-        }
-      },
-    );
+            .showSnackBar(SnackBar(content: Text('Failed to send OTP: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    const cardRadius = 16.0;
+    InputDecoration dec(String label) => InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none));
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-              colors: [Color(0xFFE6F7FF), Color(0xFFBFE9FF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Card(
-                shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.all(Radius.circular(cardRadius))),
-                elevation: 10,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Text('Forgot Password',
-                        style: TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    const Text(
-                        'Provide your phone to receive an OTP. You may also enter your email for reference.',
-                        style: TextStyle(color: Colors.black54)),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                        controller: _email,
-                        decoration: const InputDecoration(
-                            prefixIcon: Icon(Icons.email),
-                            labelText: 'Email (optional)'),
-                        keyboardType: TextInputType.emailAddress),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                        controller: _phone,
-                        decoration: const InputDecoration(
-                            prefixIcon: Icon(Icons.phone),
-                            labelText: 'Phone (with country code)'),
-                        keyboardType: TextInputType.phone),
-                    const SizedBox(height: 18),
-                    SizedBox(
+      appBar: AppBar(title: const Text('Forgot password')),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Card(
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Text('Forgot Password',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  TextField(
+                      controller: _email, decoration: dec('Email (optional)')),
+                  const SizedBox(height: 12),
+                  TextField(
+                      controller: _phone,
+                      keyboardType: TextInputType.phone,
+                      decoration: dec('Phone (with country code)')),
+                  const SizedBox(height: 16),
+                  SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14)),
-                        onPressed: _loading ? null : _sendOtp,
-                        child: _loading
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
-                            : const Text('Send OTP'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Back to login')),
-                  ]),
-                ),
+                          onPressed: _loading ? null : _sendOtp,
+                          child: _loading
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white))
+                              : const Text('Send OTP'))),
+                  const SizedBox(height: 8),
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Back to login')),
+                ]),
               ),
             ),
           ),
